@@ -12,8 +12,8 @@ int flags[MAXPIXELS]; //足すか足さないか
 int values[MAXPIXELS]; //各LEDの明るさ
 int increment[MAXPIXELS]; //各フレームで足す数値
 
-int plus[3] = {15, 30, 40}; // かがやきMaxまでのはやさ
-int minus[3] = {-15, -30, -40}; // かがやき0までの速さ
+int plus[3] = {15, 30, 120}; // かがやきMaxまでのはやさ
+int minus[3] = {-15, -30, -120}; // かがやき0までの速さ
 int interval[3] = {40, 30, 20}; //次のドクンまでの間隔
 
 bool changeFlg = false; // 次のタイミングでタイプを変えるかどうか
@@ -36,7 +36,7 @@ void setup() {
   // LED初期化
   for (int i = MAXPIXELS - 1; i + 1; i--) {
     flags[i] = 0;
-    values[i] = (MAXPIXELS - i) * 8.5;
+    values[i] = 0;
     increment[i] = plus[type];
   }
   
@@ -50,21 +50,17 @@ void setup() {
   
 }
 
-
-//
-//
 void loop() {
 
 //  char data = '0';
 
-  //
   // まずはoFからの信号を見る
   if (Serial.available() > 0) {
     char data = Serial.read();
     if (data == '1') {
       
       // 信号があればフェーズ1へ
-//      data = '1';
+      // data = '1';
       changeType = 1;
       changeFlg = true;
       Serial.println("hellllllllll");
@@ -74,88 +70,49 @@ void loop() {
   // --- < nagahora > --- //
   // 
   // 0.5秒間隔で距離センサーの値を取得
-  int duration = millis() - prevTime;
-  if (duration > 500) {
-
-      digitalWrite(trigPin, LOW); 
-      delayMicroseconds(2); 
-      digitalWrite( trigPin, HIGH ); //超音波を出力
-      delayMicroseconds( 10 ); //
-      digitalWrite( trigPin, LOW );
-      Duration = pulseIn( echoPin, HIGH ); //センサからの入力
-      if (Duration > 0) {
-        Duration = Duration/2; //往復距離を半分にする
-         Distance = Duration*340*100/1000000; // 音速を340m/sに設定
-      }
-
-      Serial.println(Distance);
-      
-      // 更新時間を保持
-      prevTime = millis();
-  }
+//  int duration = millis() - prevTime;
+//  if (duration > 500) {
+//
+//      digitalWrite(trigPin, LOW);
+//      delayMicroseconds(2);
+//      digitalWrite( trigPin, HIGH ); //超音波を出力
+//      delayMicroseconds( 10 );
+//      digitalWrite( trigPin, LOW );
+//      Duration = pulseIn( echoPin, HIGH ); //センサからの入力
+//      if (Duration > 0) {
+//        Duration = Duration/2; //往復距離を半分にする
+//         Distance = Duration*340*100/1000000; // 音速を340m/sに設定
+//      }
+//      
+//      changeType = 1;
+//      changeFlg = true;
+//
+//      Serial.println(Distance);
+//      
+//      // 更新時間を保持
+//      prevTime = millis();
+//  }
   // --- < /nagahora > --- //
 
-  if (Distance < 50) {
-    changeType = 2;
-    changeFlg = true;
-  } else if (changeType != 1) {
-    changeType = 0;
-    changeFlg = true;
-  }
-
-
-  //
-  // データによって分岐
-//  if (data != -1) {
-//    switch (data) {
-//      
-//      case '0':
-//        changeType = 0;
-//        break;
-//
-//      case '1':
-//        changeType = 1;
-//        break;
-//  
-//      case '2':
-//        changeType = 2;
-//        Serial.println("hello1");
-//        break;
-//  
-//      case '3':
-//        changeType = 0;
-//        break;
-//  
-//      default:
-//        changeType = 0;
-//        break; 
-//    }
+//  if (Distance < 50) {
+//    changeType = 2;
+//    changeFlg = true;
+//  } else if (changeType != 1) {
+//    changeType = 0;
 //    changeFlg = true;
 //  }
 
   //
   // LED 
   for (int i = 0; i < MAXPIXELS; i++) {
+    values[i] += increment[i];
     
-    if (flags[i] == 0) {
-      values[i] += increment[i];
-      
-      if (values[i] > MAXBRIGHTNESS) {
-        values[i] = MAXBRIGHTNESS;
-        increment[i] = minus[type];
-
-        // 真ん中がMAXになったらりゅーき側に通知
-        if (i == MAXPIXELS / 2) {
-//          Serial.println(0);
-        }
-        
-      } else if (values[i] <= 0) {
-        values[i] = 0;
-        increment[i] = plus[type];
-        flags[i] = interval[type];
-      }
-    } else {
-      flags[i]--;
+    if (values[i] > MAXBRIGHTNESS) {
+      values[i] = MAXBRIGHTNESS;
+      increment[i] = minus[type];
+    } else if (values[i] <= 0) {
+      values[i] = 0;
+      increment[i] = plus[type];
     }
 
     // 色設定
@@ -166,7 +123,8 @@ void loop() {
     } else {
       pixels.setPixelColor(i, pixels.Color(values[i], 0, 0));
     }
-    
+
+    //pixels.setPixelColor(i, pixels.Color(values[i], 0, 0));
     pixels.show();
 
     // 全部消えてからタイプを変える
